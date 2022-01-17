@@ -18,6 +18,7 @@ data class PickupJobs(
     var pickedArticleCount: Int = 0,
     var priority: String? = null,
     var shortId: String? = null,
+    var status: String? = null,
     var targetTime: Date? = null,
     var targetVersion: Int = 0,
     var tenantOrderId: String? = null,
@@ -35,6 +36,7 @@ data class PickupJobs(
         Date(parcel.readLong()),
         parcel.readInt(),
         parcel.readInt(),
+        parcel.readString(),
         parcel.readString(),
         parcel.readString(),
         Date(parcel.readLong()),
@@ -57,6 +59,7 @@ data class PickupJobs(
         parcel.writeInt(pickedArticleCount)
         parcel.writeString(priority)
         parcel.writeString(shortId)
+        parcel.writeString(status)
         targetTime?.let { parcel.writeLong(it.time) }
         parcel.writeInt(targetVersion)
         parcel.writeString(tenantOrderId)
@@ -76,4 +79,8 @@ data class PickupJobs(
             return arrayOfNulls(size)
         }
     }
+
+    fun toPickjobUiModel() =
+        PickjobUiModel(id = "$id", status = "$status", version = version)
 }
+

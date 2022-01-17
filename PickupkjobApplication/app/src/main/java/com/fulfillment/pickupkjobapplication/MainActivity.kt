@@ -2,8 +2,10 @@ package com.fulfillment.pickupkjobapplication
 
 import androidx.appcompat.app.AppCompatActivity
 import android.os.Bundle
+import android.util.Log
 import androidx.lifecycle.Observer
 import androidx.lifecycle.ViewModelProvider
+import androidx.lifecycle.coroutineScope
 import androidx.lifecycle.lifecycleScope
 import com.fulfillment.pickupkjobapplication.adapters.PickupjobListAdapter
 import com.fulfillment.pickupkjobapplication.databinding.ActivityMainBinding
@@ -12,8 +14,10 @@ import com.fulfillment.pickupkjobapplication.network.Api
 import com.google.firebase.FirebaseApp
 import kotlinx.coroutines.launch
 import androidx.recyclerview.widget.LinearLayoutManager
-import androidx.recyclerview.widget.DividerItemDecoration
+import androidx.recyclerview.widget.RecyclerView
 import com.fulfillment.pickupkjobapplication.adapters.OnCheckedChangeListener
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Dispatchers
 
 
 class MainActivity : AppCompatActivity(), OnCheckedChangeListener {
@@ -22,15 +26,13 @@ class MainActivity : AppCompatActivity(), OnCheckedChangeListener {
     private lateinit var viewModel: PickjobViewModel
     private var binding: ActivityMainBinding? = null
     private lateinit var repository: PickjobRepository
+    private lateinit var finalList:ArrayList<PickupJobs>
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         binding = ActivityMainBinding.inflate(layoutInflater)
         setContentView(binding?.root)
         FirebaseApp.initializeApp(this)
-
-        setAdapter()
-
         repository = PickjobRepository(Api.retrofitService)
 
         var pickjobViewModelProviderFactory = PickjobViewModelProviderFactory(repository)
@@ -40,17 +42,30 @@ class MainActivity : AppCompatActivity(), OnCheckedChangeListener {
             pickjobViewModelProviderFactory
         ).get(PickjobViewModel::class.java)
 
+        finalList= ArrayList<PickupJobs>()
+        setAdapter()
+
         viewModel.pickupJobList.observe(this, Observer {
             if (it.isNotEmpty()) {
+
                 picjobListAdapter.submitList(it)
                 picjobListAdapter.notifyDataSetChanged()
+                //binding?.rvPickjobs?.adapter = picjobListAdapter
+                Log.d("inside oberserver","======================${it.toString()}")
 
             }
         })
-        lifecycleScope.launch {
+        CoroutineScope(Dispatchers.IO).launch {
 
-            viewModel.signInwithEmailidAndPassword()
-            viewModel.getAccessToken()
+           // if(viewModel.getCurrentUser()==null)
+           /* {
+                viewModel.signInwithEmailidAndPassword()
+            }else
+            {
+                Log.d("current user",viewModel.getCurrentUser()?.displayName.toString())
+            }*/
+
+           // viewModel.getAccessToken()
             viewModel.getPickUpJobsList()
 
         }
@@ -60,20 +75,11 @@ class MainActivity : AppCompatActivity(), OnCheckedChangeListener {
 
         picjobListAdapter = PickupjobListAdapter()
         picjobListAdapter.setOnCheckedChangeListner(this)
-
+        val layoutManager = LinearLayoutManager(this)
+        layoutManager.orientation = RecyclerView.VERTICAL;
+        binding?.rvPickjobs?.layoutManager =layoutManager
         binding?.rvPickjobs?.adapter = picjobListAdapter
 
-        val layoutManager = LinearLayoutManager(this)
-        layoutManager.reverseLayout = true
-        layoutManager.stackFromEnd = true
-
-        binding?.rvPickjobs?.layoutManager =layoutManager
-        binding?.rvPickjobs?.addItemDecoration(
-            DividerItemDecoration(
-                this,
-                LinearLayoutManager.VERTICAL
-            )
-        )
     }
 
     override fun onDestroy() {
@@ -82,13 +88,10 @@ class MainActivity : AppCompatActivity(), OnCheckedChangeListener {
     }
 
     override fun onCheckedChange(pickJob: PickupJobs) {
-        lateinit var pickjobUiModel: PickjobUiModel
-        if (pickJob.status.equals(Constants.STATUS_CLOSED)) {
-            pickjobUiModel =
-                PickjobUiModel(pickJob.id.toString(), Constants.STATUS_OPEN, pickJob.version)
+        var pickjobUiModel: PickjobUiModel = if (pickJob.status.equals(Constants.STATUS_CLOSED)) {
+            PickjobUiModel(pickJob.id.toString(), Constants.STATUS_OPEN, pickJob.version)
         } else {
-            pickjobUiModel =
-                PickjobUiModel(pickJob.id.toString(), Constants.STATUS_CLOSED, pickJob.version)
+            PickjobUiModel(pickJob.id.toString(), Constants.STATUS_CLOSED, pickJob.version)
         }
         if (Constants.isNetworkAvailable(this)) {
             lifecycleScope.launch {
@@ -96,6 +99,12 @@ class MainActivity : AppCompatActivity(), OnCheckedChangeListener {
             }
 
         }
+    }
+
+    override fun onStart() {
+        super.onStart()
+
+
     }
 }
 

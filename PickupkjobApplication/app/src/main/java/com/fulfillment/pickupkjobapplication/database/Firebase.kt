@@ -11,7 +11,7 @@ import com.google.firebase.firestore.QuerySnapshot
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 
-class Firebase {
+object Firebase {
 
     private var firebaseFirestore = FirebaseFirestore.getInstance()
     private var firebaseAuth = FirebaseAuth.getInstance()
@@ -34,17 +34,14 @@ class Firebase {
 
     suspend fun getAccessToken(user: FirebaseUser): Task<GetTokenResult> {
         return withContext(Dispatchers.IO) {
-            user.getIdToken(false)
+            user.getIdToken(true)
         }
     }
 
-    suspend fun getPickUpJobsList(): Task<QuerySnapshot> {
-        return withContext(Dispatchers.IO) {
-            firebaseFirestore.collection(Constants.PICKUP_JOB_TABLE_NAME)
+    suspend fun getPickUpJobsList()= withContext(Dispatchers.IO) {
+             firebaseFirestore.collection(Constants.PICKUP_JOB_TABLE_NAME)
                 .whereEqualTo("facilityRef", "3q1YPzcGJmVufeVR9kTPyB").get()
 
-        }
     }
-
     fun currentUser() = firebaseAuth.currentUser
 }

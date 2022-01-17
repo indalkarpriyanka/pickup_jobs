@@ -23,13 +23,13 @@ class PickjobRepository(private val service: PickupJobService) {
             return@withContext response
         }
 
-    suspend fun signInwithEmailidAndPassword(): Unit = Firebase().signInwithEmailidAndPassword()
+    suspend fun signInwithEmailidAndPassword(): Unit = Firebase.signInwithEmailidAndPassword()
 
-    suspend fun getAccessToken(user: FirebaseUser): Task<GetTokenResult> =Firebase().getAccessToken(user)
+    suspend fun getAccessToken(user: FirebaseUser): Task<GetTokenResult> =Firebase.getAccessToken(user)
 
-    suspend fun getPickUpJobsList(): Task<QuerySnapshot> =Firebase().getPickUpJobsList()
+    suspend fun getPickUpJobsList(): Task<QuerySnapshot> =Firebase.getPickUpJobsList()
 
-    fun currentUser()=Firebase().currentUser()
+    fun currentUser()=Firebase.currentUser()
 
 
 }

@@ -36,6 +36,7 @@ class PickjobViewModel(private val repository: PickjobRepository) : ViewModel() 
 
     suspend fun signInwithEmailidAndPassword() {
         repository.signInwithEmailidAndPassword()
+        //getAccessToken()
     }
 
     suspend fun getAccessToken() {
@@ -69,5 +70,9 @@ class PickjobViewModel(private val repository: PickjobRepository) : ViewModel() 
         } else {
             Log.d("Error in pickjob fetch", pickupJobsTask.exception?.message.toString())
         }
+    }
+
+    fun getCurrentUser(): FirebaseUser? {
+        return repository.currentUser()
     }
 }

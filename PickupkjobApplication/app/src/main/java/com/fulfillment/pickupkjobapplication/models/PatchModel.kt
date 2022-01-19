@@ -1,7 +1,8 @@
-package com.fulfillment.pickupkjobapplication.network
+package com.fulfillment.pickupkjobapplication.models
 
 import android.os.Parcel
 import android.os.Parcelable
+import com.fulfillment.pickupkjobapplication.network.Action
 import java.util.ArrayList
 
 data class PatchModel(
@@ -9,7 +10,7 @@ data class PatchModel(
 ) : Parcelable {
     constructor(parcel: Parcel) : this(
         parcel.readInt(),
-        parcel.createTypedArrayList(Action.CREATOR)
+        parcel.createTypedArrayList(Action)
     )
 
     override fun writeToParcel(parcel: Parcel, flags: Int) {

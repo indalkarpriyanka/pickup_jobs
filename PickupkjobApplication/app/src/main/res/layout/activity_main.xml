@@ -6,6 +6,17 @@
     android:layout_height="match_parent"
     tools:context=".MainActivity">
 
+    <ProgressBar
+        android:id="@+id/pgrBar"
+        style="?android:attr/progressBarStyleHorizontal"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:indeterminate="true"
+        app:layout_constraintLeft_toLeftOf="parent"
+        app:layout_constraintRight_toRightOf="parent"
+        app:layout_constraintBottom_toBottomOf="parent"
+        app:layout_constraintTop_toTopOf="parent" />
+
     <androidx.recyclerview.widget.RecyclerView
         android:id="@+id/rv_pickjobs"
         app:layout_constraintTop_toTopOf="parent"
@@ -15,5 +26,7 @@
         android:layout_height="wrap_content"
         tools:listitem="@layout/item_list_layout"
         app:layoutManager="androidx.recyclerview.widget.LinearLayoutManager"/>
+
+
 
 </androidx.constraintlayout.widget.ConstraintLayout>

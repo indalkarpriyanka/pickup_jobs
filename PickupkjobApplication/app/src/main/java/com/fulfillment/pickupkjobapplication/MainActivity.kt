@@ -3,9 +3,9 @@ package com.fulfillment.pickupkjobapplication
 import androidx.appcompat.app.AppCompatActivity
 import android.os.Bundle
 import android.util.Log
+import android.view.View
 import androidx.lifecycle.Observer
 import androidx.lifecycle.ViewModelProvider
-import androidx.lifecycle.coroutineScope
 import androidx.lifecycle.lifecycleScope
 import com.fulfillment.pickupkjobapplication.adapters.PickupjobListAdapter
 import com.fulfillment.pickupkjobapplication.databinding.ActivityMainBinding
@@ -16,6 +16,10 @@ import kotlinx.coroutines.launch
 import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.recyclerview.widget.RecyclerView
 import com.fulfillment.pickupkjobapplication.adapters.OnCheckedChangeListener
+import com.fulfillment.pickupkjobapplication.repository.PickjobRepository
+import com.fulfillment.pickupkjobapplication.utils.Constants
+import com.fulfillment.pickupkjobapplication.viewmodel.PickjobViewModel
+import com.fulfillment.pickupkjobapplication.viewmodel.PickjobViewModelProviderFactory
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 
@@ -26,60 +30,68 @@ class MainActivity : AppCompatActivity(), OnCheckedChangeListener {
     private lateinit var viewModel: PickjobViewModel
     private var binding: ActivityMainBinding? = null
     private lateinit var repository: PickjobRepository
-    private lateinit var finalList:ArrayList<PickupJobs>
+
+    private lateinit var pickjobViewModelProviderFactory: PickjobViewModelProviderFactory
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         binding = ActivityMainBinding.inflate(layoutInflater)
         setContentView(binding?.root)
         FirebaseApp.initializeApp(this)
+
+        setViewModel()
+        signInAndFetchPickjobData()
+        setAdapter()
+    }
+
+    private fun signInAndFetchPickjobData() {
+        CoroutineScope(Dispatchers.IO).launch {
+            if (viewModel.getCurrentUser() == null) {
+                viewModel.signInwithEmailidAndPassword()
+            } else {
+                viewModel.getAccessToken()
+                Log.d("current user", viewModel.getCurrentUser()?.displayName.toString())
+            }
+            viewModel.getPickUpJobsList()
+        }
+    }
+
+    private fun setViewModel() {
         repository = PickjobRepository(Api.retrofitService)
-
-        var pickjobViewModelProviderFactory = PickjobViewModelProviderFactory(repository)
-
+        pickjobViewModelProviderFactory = PickjobViewModelProviderFactory(repository)
         viewModel = ViewModelProvider(
             this,
             pickjobViewModelProviderFactory
         ).get(PickjobViewModel::class.java)
-
-        finalList= ArrayList<PickupJobs>()
-        setAdapter()
-
         viewModel.pickupJobList.observe(this, Observer {
             if (it.isNotEmpty()) {
-
-                picjobListAdapter.submitList(it)
-                picjobListAdapter.notifyDataSetChanged()
-                //binding?.rvPickjobs?.adapter = picjobListAdapter
-                Log.d("inside oberserver","======================${it.toString()}")
-
+                picjobListAdapter.pickjobDiff.submitList(it)
             }
         })
-        CoroutineScope(Dispatchers.IO).launch {
-
-           // if(viewModel.getCurrentUser()==null)
-           /* {
-                viewModel.signInwithEmailidAndPassword()
-            }else
-            {
-                Log.d("current user",viewModel.getCurrentUser()?.displayName.toString())
-            }*/
-
-           // viewModel.getAccessToken()
-            viewModel.getPickUpJobsList()
-
-        }
+        viewModel.isLoading.observe(this, Observer {
+            if (it)
+                showProgressBar()
+            else
+                hideProgressBar()
+        })
     }
 
-    private fun setAdapter() {
+    private fun showProgressBar() {
+        binding?.pgrBar?.visibility = View.VISIBLE
+    }
 
+    private fun hideProgressBar() {
+        binding?.pgrBar?.visibility = View.GONE
+    }
+
+
+    private fun setAdapter() {
         picjobListAdapter = PickupjobListAdapter()
         picjobListAdapter.setOnCheckedChangeListner(this)
         val layoutManager = LinearLayoutManager(this)
         layoutManager.orientation = RecyclerView.VERTICAL;
-        binding?.rvPickjobs?.layoutManager =layoutManager
+        binding?.rvPickjobs?.layoutManager = layoutManager
         binding?.rvPickjobs?.adapter = picjobListAdapter
-
     }
 
     override fun onDestroy() {
@@ -87,24 +99,19 @@ class MainActivity : AppCompatActivity(), OnCheckedChangeListener {
         binding = null
     }
 
-    override fun onCheckedChange(pickJob: PickupJobs) {
-        var pickjobUiModel: PickjobUiModel = if (pickJob.status.equals(Constants.STATUS_CLOSED)) {
-            PickjobUiModel(pickJob.id.toString(), Constants.STATUS_OPEN, pickJob.version)
+    override fun onCheckedChange(pickJob: PickupJobs, isChecked: Boolean) {
+        var status: String
+        if (isChecked) {
+            status = Constants.STATUS_OPEN
         } else {
-            PickjobUiModel(pickJob.id.toString(), Constants.STATUS_CLOSED, pickJob.version)
+            status = Constants.STATUS_CLOSED
         }
         if (Constants.isNetworkAvailable(this)) {
+            Log.d("auth token", Constants.USER_TOKEN)
             lifecycleScope.launch {
-                viewModel.patchPickUpjob(pickjobUiModel)
+                viewModel.patchPickUpjob(pickJob.id.toString(), status, pickJob.version)
             }
-
         }
-    }
-
-    override fun onStart() {
-        super.onStart()
-
-
     }
 }
 
